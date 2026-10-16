@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Расписание дня</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-bg-color,#fff);--tx:var(--tg-theme-text-color,#14171a);
+  --hint:var(--tg-theme-hint-color,#7a828a);--accent:var(--tg-theme-button-color,#2481cc);
+  --atx:var(--tg-theme-button-text-color,#fff);--card:var(--tg-theme-secondary-bg-color,#f1f3f5);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,sans-serif;padding:12px 12px 40px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{flex:1;padding:9px 4px;border:0;border-radius:10px;background:var(--card);color:var(--tx);font:inherit}
+.tabs button.on{background:var(--accent);color:var(--atx)}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.nav b{font-size:18px;text-transform:capitalize}
+.nav button{border:0;background:var(--card);color:var(--tx);border-radius:10px;width:40px;height:40px;font-size:20px}
+.today-link{display:block;margin:-4px auto 10px;border:0;background:none;color:var(--accent);font:inherit}
+section{background:var(--card);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+h3{margin:0 0 6px;font-size:15px;color:var(--hint);font-weight:600}
+ol{margin:0;padding-left:22px}
+.row{display:flex;align-items:center;gap:10px;padding:7px 0}
+.row input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.row .t{flex:1;min-width:0;overflow-wrap:anywhere}
+.row.done .t{text-decoration:line-through;color:var(--hint)}
+.row small{color:var(--hint)}
+.x{border:0;background:none;color:var(--hint);font-size:20px;padding:0 4px}
+.empty{color:var(--hint);padding:4px 0}
+.add{display:flex;gap:6px}
+input[type=text],input[type=time],input[type=number],textarea{
+  width:100%;padding:10px;border:1px solid var(--card);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+.add input[type=text]{flex:1}.add input[type=time]{width:110px}
+.btn{border:0;border-radius:10px;background:var(--accent);color:var(--atx);padding:10px 14px;font:inherit}
+label{display:block;margin:10px 0 4px;color:var(--hint);font-size:14px}
+textarea{min-height:84px;resize:vertical}
+.msg{color:var(--hint);text-align:center;margin-top:8px;min-height:20px}
+</style>
+</head>
+<body>
+<div class="tabs">
+  <button data-v="day" class="on">День</button>
+  <button data-v="schedule">Уроки</button>
+  <button data-v="settings">Настройки</button>
+</div>
+<div id="app"></div>
+
+<script>
+const tg = Telegram.WebApp; tg.ready(); tg.expand();
+const app = document.getElementById('app');
+const DAYS = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+let view = 'day', cur = null, today = null;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(path, opts = {}) {
+  const r = await fetch('/api/' + path, {
+    ...opts,
+    headers: {'Content-Type': 'application/json', 'X-Init-Data': tg.initData}
+  });
+  if (!r.ok) {
+    let m = 'Ошибка ' + r.status;
+    try { m = (await r.json()).detail || m; } catch (e) {}
+    throw new Error(m);
+  }
+  return r.json();
+}
+const shift = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const longDate = d => new Date(d + 'T00:00:00Z').toLocaleDateString('ru', {weekday:'long', day:'numeric', month:'long', timeZone:'UTC'});
+const shortDate = d => new Date(d + 'T00:00:00Z').toLocaleDateString('ru', {day:'numeric', month:'short', timeZone:'UTC'});
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  view = b.dataset.v;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+
+function taskRow(t, extra = '') {
+  return `<div class="row ${t.done ? 'done' : ''}">
+    <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggle(${t.id}, this.checked)">
+    <div class="t">${t.at ? `<small>${esc(t.at)}</small> ` : ''}${esc(t.title)}${extra}</div>
+    <button class="x" onclick="del(${t.id})" aria-label="Удалить">×</button></div>`;
+}
+
+async function renderDay() {
+  const d = await api('day' + (cur ? '?d=' + cur : ''));
+  cur = d.date; today = d.today;
+  let h = `<div class="nav"><button onclick="go(-1)">‹</button><b>${longDate(cur)}</b><button onclick="go(1)">›</button></div>`;
+  if (cur !== today) h += `<button class="today-link" onclick="cur=null;render()">Вернуться на сегодня</button>`;
+  h += `<section><h3>Уроки</h3>` + (d.lessons.length
+    ? `<ol>${d.lessons.map(l => `<li>${esc(l)}</li>`).join('')}</ol>`
+    : `<div class="empty">Уроков нет. Добавь расписание на вкладке «Уроки».</div>`) + `</section>`;
+  if (cur === today && d.overdue.length)
+    h += `<section><h3>Вчерашние дела</h3>${d.overdue.map(t => taskRow({...t, done: 0}, ` <small>(${shortDate(t.day)})</small>`)).join('')}</section>`;
+  h += `<section><h3>Дела</h3>` + (d.tasks.length ? d.tasks.map(t => taskRow(t)).join('') : `<div class="empty">Пока пусто</div>`) +
+    `</section><div class="add"><input type="text" id="nt" placeholder="Новое дело" maxlength="200"><input type="time" id="nm"><button class="btn" onclick="add()">Добавить</button></div><div class="msg" id="msg"></div>`;
+  app.innerHTML = h;
+  document.getElementById('nt').addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
+}
+
+async function renderSchedule() {
+  const s = await api('schedule');
+  app.innerHTML = `<p class="empty">Один урок на строке. Можно с временем: «8:30 Математика». Расписание повторяется каждую неделю.</p>` +
+    DAYS.map((n, i) => `<label>${n}</label><textarea id="d${i}">${esc(s.days[i])}</textarea>`).join('') +
+    `<p><button class="btn" onclick="saveSchedule()">Сохранить</button></p><div class="msg" id="msg"></div>`;
+}
+
+async function renderSettings() {
+  const s = await api('settings');
+  app.innerHTML = `
+    <label>Часовой пояс</label><input type="text" id="tz" value="${esc(s.tz)}">
+    <label>Уроки на день приходят в</label><input type="time" id="morning" value="${s.morning}">
+    <label>Первое напоминание о делах</label><input type="time" id="first" value="${s.first}">
+    <label>Повторять каждые (часов)</label><input type="number" id="every" min="1" max="12" value="${s.every}">
+    <label>Последнее напоминание</label><input type="time" id="last" value="${s.last}">
+    <p><button class="btn" onclick="saveSettings()">Сохранить</button></p><div class="msg" id="msg"></div>`;
+}
+
+async function render() {
+  try { await ({day: renderDay, schedule: renderSchedule, settings: renderSettings})[view](); }
+  catch (e) { app.innerHTML = `<p class="empty">${esc(e.message)}</p>`; }
+}
+const say = t => { const m = document.getElementById('msg'); if (m) m.textContent = t; };
+
+function go(n) { cur = shift(cur, n); render(); }
+async function add() {
+  const title = document.getElementById('nt').value.trim();
+  if (!title) return say('Напиши, что нужно сделать');
+  try {
+    await api('tasks', {method: 'POST', body: JSON.stringify({day: cur, title, at: document.getElementById('nm').value})});
+    render();
+  } catch (e) { say(e.message); }
+}
+async function toggle(id, done) { try { await api('tasks/' + id, {method: 'PATCH', body: JSON.stringify({done})}); } catch (e) {} render(); }
+async function del(id) { try { await api('tasks/' + id, {method: 'DELETE'}); } catch (e) {} render(); }
+async function saveSchedule() {
+  try {
+    await api('schedule', {method: 'PUT', body: JSON.stringify({days: DAYS.map((_, i) => document.getElementById('d' + i).value)})});
+    say('Сохранено');
+  } catch (e) { say(e.message); }
+}
+async function saveSettings() {
+  const v = id => document.getElementById(id).value;
+  try {
+    await api('settings', {method: 'PUT', body: JSON.stringify({tz: v('tz').trim(), morning: v('morning'), first: v('first'), every: +v('every'), last: v('last')})});
+    say('Сохранено');
+  } catch (e) { say(e.message); }
+}
+render();
+</script>
+</body>
+</html>
