@@ -1,0 +1,1456 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#06132D">
+<title>Планер</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root {
+  --bg: #06132D;
+  --card: #0B1E40;
+  --card-2: #102751;
+  --card-3: #122D5A;
+  --accent: #48D7FF;
+  --accent-soft: rgba(72, 215, 255, .16);
+  --blue: #217BFF;
+  --text: #F6FBFF;
+  --muted: #9EB9DA;
+  --line: rgba(151, 205, 255, .15);
+  --danger: #FF6C8D;
+  --success: #59EDB0;
+  --shadow: 0 16px 42px rgba(0, 0, 0, .28);
+}
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+html {
+  min-height: 100%;
+  background: var(--bg);
+}
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--text);
+  font: 16px/1.42 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 15% -8%, rgba(50, 152, 255, .28), transparent 34%),
+    radial-gradient(circle at 90% 13%, rgba(72, 215, 255, .13), transparent 30%),
+    linear-gradient(180deg, #071735 0%, #06132D 48%, #051028 100%);
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px calc(env(safe-area-inset-bottom, 0px) + 108px);
+}
+button, input, textarea {
+  font: inherit;
+}
+button {
+  color: inherit;
+  border: 0;
+  cursor: pointer;
+}
+button:active {
+  transform: scale(.97);
+}
+input, textarea {
+  color: var(--text);
+}
+input::placeholder, textarea::placeholder {
+  color: #7896BB;
+}
+input[type="text"], input[type="time"], input[type="number"], textarea {
+  width: 100%;
+  outline: none;
+  border: 1px solid var(--line);
+  background: rgba(10, 33, 72, .84);
+  border-radius: 15px;
+  padding: 13px 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+input:focus, textarea:focus {
+  border-color: rgba(72,215,255,.82);
+  box-shadow: 0 0 0 3px rgba(72,215,255,.12);
+}
+textarea {
+  min-height: 91px;
+  resize: vertical;
+}
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.7);
+  opacity: .8;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 1px 18px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.brand-mark {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 14px;
+  color: #001A38;
+  background: linear-gradient(145deg, #74E8FF, #2E91FF);
+  box-shadow: 0 8px 22px rgba(72,215,255,.27);
+}
+.brand-mark svg {
+  width: 23px;
+  height: 23px;
+}
+.brand-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.35px;
+}
+.brand-subtitle {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: -1px;
+}
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: #CBE8FF;
+  background: rgba(16,39,81,.78);
+}
+.icon-btn svg {
+  width: 21px;
+  height: 21px;
+}
+.hero {
+  margin: 4px 0 16px;
+}
+.kicker {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+.hero-title {
+  margin-top: 2px;
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -.7px;
+}
+.hero-text {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.card {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 13px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(140deg, rgba(17,47,98,.98), rgba(11,30,64,.98));
+  box-shadow: var(--shadow);
+}
+.card::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.05), transparent 34%);
+}
+.card > * {
+  position: relative;
+  z-index: 1;
+}
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.card-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -.2px;
+}
+.card-caption {
+  color: var(--muted);
+  font-size: 13px;
+}
+.date-nav {
+  display: grid;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+.date-name {
+  min-width: 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 750;
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.today-link {
+  width: 100%;
+  margin: -2px 0 14px;
+  padding: 0;
+  color: var(--accent);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 650;
+}
+.progress-card {
+  padding: 17px;
+  background:
+    radial-gradient(circle at 92% 3%, rgba(72,215,255,.17), transparent 34%),
+    linear-gradient(142deg, #12346A, #0B1E40);
+}
+.progress-line {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+.progress-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+.progress-number {
+  margin-top: 1px;
+  font-size: 31px;
+  font-weight: 850;
+  letter-spacing: -1px;
+}
+.progress-number span {
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 650;
+}
+.progress-percent {
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 800;
+}
+.progress-track {
+  height: 9px;
+  overflow: hidden;
+  margin-top: 14px;
+  border-radius: 99px;
+  background: rgba(4,15,39,.62);
+}
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #257BFF, #48D7FF);
+  box-shadow: 0 0 17px rgba(72,215,255,.6);
+  transition: width .3s ease;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin: 0 0 13px;
+}
+.stat {
+  padding: 12px 10px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: rgba(16,39,81,.75);
+}
+.stat-value {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+}
+.stat-label {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.22;
+}
+.lesson {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(151,205,255,.1);
+}
+.lesson:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.lesson-index {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 10px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+.lesson-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.task {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(151,205,255,.1);
+}
+.task:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.task-checkbox {
+  width: 25px;
+  height: 25px;
+  flex: none;
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid #5A769F;
+  border-radius: 9px;
+  background: transparent;
+}
+.task-checkbox:checked {
+  border-color: var(--accent);
+  background: linear-gradient(145deg, #2F90FF, #48D7FF);
+  box-shadow: 0 0 15px rgba(72,215,255,.33);
+}
+.task-checkbox:checked::after {
+  content: "";
+  width: 6px;
+  height: 11px;
+  border: solid #001733;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px,-1px);
+}
+.task-main {
+  flex: 1;
+  min-width: 0;
+}
+.task-title {
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  font-weight: 550;
+}
+.task-time {
+  display: inline-block;
+  margin: 0 0 3px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+.task.done .task-title {
+  color: #7896BB;
+  text-decoration: line-through;
+}
+.task.done .task-time {
+  color: #7896BB;
+}
+.task-date {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.delete-btn {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 0;
+  border-radius: 10px;
+  color: #9DB8D9;
+  background: transparent;
+}
+.delete-btn:active {
+  color: var(--danger);
+  background: rgba(255,108,141,.1);
+}
+.delete-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.overdue {
+  border-color: rgba(255, 182, 105, .26);
+  background: linear-gradient(140deg, rgba(72,49,66,.92), rgba(11,30,64,.98));
+}
+.overdue .card-title {
+  color: #FFD29B;
+}
+.add-card {
+  padding: 14px;
+}
+.add-grid {
+  display: grid;
+  grid-template-columns: 1fr 105px;
+  gap: 9px;
+}
+.add-submit {
+  width: 100%;
+  margin-top: 9px;
+}
+.primary-btn {
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 15px;
+  color: #001631;
+  font-weight: 800;
+  background: linear-gradient(135deg, #2083FF, #48D7FF);
+  box-shadow: 0 9px 23px rgba(35,135,255,.24);
+}
+.primary-btn[disabled] {
+  opacity: .66;
+  cursor: default;
+}
+.secondary-btn {
+  min-height: 43px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: #CDEBFF;
+  font-weight: 700;
+  background: rgba(16,39,81,.78);
+}
+.empty {
+  padding: 7px 0 3px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.settings-note, .local-note {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.field-label {
+  display: block;
+  margin: 13px 0 6px;
+  color: #B8D3EE;
+  font-size: 13px;
+  font-weight: 650;
+}
+.schedule-day {
+  margin-bottom: 12px;
+}
+.schedule-day-name {
+  margin: 0 0 6px 2px;
+  color: #CFEAFF;
+  font-size: 14px;
+  font-weight: 750;
+}
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.avatar {
+  width: 62px;
+  height: 62px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 2px solid rgba(72,215,255,.55);
+  border-radius: 21px;
+  color: #DDF7FF;
+  background: linear-gradient(145deg, #1F75DA, #123365);
+  box-shadow: 0 8px 22px rgba(72,215,255,.15);
+  font-size: 22px;
+  font-weight: 850;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.profile-name {
+  overflow-wrap: anywhere;
+  font-size: 19px;
+  font-weight: 820;
+  letter-spacing: -.3px;
+}
+.profile-user {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.achievement {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid rgba(151,205,255,.1);
+}
+.achievement-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 12px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.achievement-icon svg {
+  width: 19px;
+  height: 19px;
+}
+.achievement-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+.achievement-text {
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.goal {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(151,205,255,.1);
+}
+.goal:last-child {
+  border-bottom: 0;
+}
+.goal-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  font-weight: 550;
+}
+.goal.done .goal-text {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.nav {
+  position: fixed;
+  z-index: 20;
+  left: 12px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 7px 5px;
+  border: 1px solid rgba(151,205,255,.16);
+  border-radius: 24px;
+  background: rgba(7, 24, 54, .9);
+  box-shadow: 0 15px 34px rgba(0,0,0,.36);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.nav-btn {
+  min-height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px 2px;
+  border-radius: 17px;
+  color: #8CA8CA;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 650;
+}
+.nav-btn svg {
+  width: 22px;
+  height: 22px;
+}
+.nav-btn.active {
+  color: #DDF8FF;
+  background: linear-gradient(135deg, rgba(32,131,255,.38), rgba(72,215,255,.17));
+  box-shadow: inset 0 0 0 1px rgba(72,215,255,.17);
+}
+.toast {
+  position: fixed;
+  z-index: 50;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 94px);
+  max-width: calc(100vw - 32px);
+  padding: 11px 15px;
+  transform: translate(-50%, 14px);
+  border: 1px solid rgba(72,215,255,.24);
+  border-radius: 14px;
+  color: #E9FBFF;
+  background: rgba(10,31,67,.96);
+  box-shadow: 0 15px 35px rgba(0,0,0,.3);
+  opacity: 0;
+  pointer-events: none;
+  font-size: 13px;
+  text-align: center;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.toast.show {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+.toast.error {
+  border-color: rgba(255,108,141,.34);
+  color: #FFD9E2;
+}
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 180px;
+  color: var(--muted);
+}
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(72,215,255,.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (max-width: 360px) {
+  body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .nav {
+    left: 8px;
+    right: 8px;
+  }
+  .add-grid {
+    grid-template-columns: 1fr 92px;
+  }
+  .hero-title {
+    font-size: 27px;
+  }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3h9l3 3v15H6z"></path>
+        <path d="M9 11h6M9 15h5M15 3v4h4"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-title">Планер</div>
+      <div class="brand-subtitle">Твой личный ритм дня</div>
+    </div>
+  </div>
+  <button class="icon-btn" type="button" data-view="settings" aria-label="Открыть настройки">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.3 2.3-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V20.4h-3.2v-.1a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06-2.3-2.3.06-.06A1.65 1.65 0 0 0 6.67 15a1.65 1.65 0 0 0-1.51-1H5.1v-3.2h.06a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.3-2.3.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V4.4h3.2v.1a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06 2.3 2.3-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1h.06V14h-.06a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </button>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<nav class="nav" aria-label="Навигация">
+  <button class="nav-btn active" type="button" data-view="day">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 10.5 12 4l8 6.5V20H4z"></path>
+      <path d="M9 20v-5h6v5"></path>
+    </svg>
+    <span>Мой день</span>
+  </button>
+  <button class="nav-btn" type="button" data-view="schedule">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect>
+      <path d="M7.5 3v4M16.5 3v4M3.5 10h17M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"></path>
+    </svg>
+    <span>Уроки</span>
+  </button>
+  <button class="nav-btn" type="button" data-view="profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8" r="3.5"></circle>
+      <path d="M4.5 20c.8-4 3.4-6 7.5-6s6.7 2 7.5 6"></path>
+    </svg>
+    <span>Профиль</span>
+  </button>
+  <button class="nav-btn" type="button" data-view="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.3 2.3-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V20.4h-3.2v-.1a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06-2.3-2.3.06-.06A1.65 1.65 0 0 0 6.67 15a1.65 1.65 0 0 0-1.51-1H5.1v-3.2h.06a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06 2.3-2.3.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V4.4h3.2v.1a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06 2.3 2.3-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1h.06V14h-.06a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+    <span>Настройки</span>
+  </button>
+</nav>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  const app = document.getElementById("app");
+  const toast = document.getElementById("toast");
+
+  const DAYS = [
+    "Понедельник", "Вторник", "Среда", "Четверг",
+    "Пятница", "Суббота", "Воскресенье"
+  ];
+
+  let view = "day";
+  let currentDate = null;
+  let todayDate = null;
+  let latestDayData = null;
+  let lastSchedule = null;
+  let renderToken = 0;
+  let toastTimer = null;
+
+  function initTelegram() {
+    if (!tg) return;
+    try {
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor("#06132D");
+      tg.setBackgroundColor("#06132D");
+      if (tg.enableClosingConfirmation) tg.enableClosingConfirmation();
+    } catch (error) {
+      console.warn("Telegram WebApp init error:", error);
+    }
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char]));
+  }
+
+  function escapeAttr(value) {
+    return escapeHTML(value);
+  }
+
+  function icon(name) {
+    const icons = {
+      trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M9 7l1-3h4l1 3M6.5 7l.8 13h9.4l.8-13"></path></svg>`,
+      target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M22 12h-2M12 22v-2M2 12h2"></path></svg>`,
+      chart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-7"></path></svg>`,
+      check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"></path></svg>`
+    };
+    return icons[name] || "";
+  }
+
+  function showToast(message, isError = false) {
+    clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.classList.toggle("error", isError);
+    toast.classList.add("show");
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
+  }
+
+  function setLoading() {
+    app.innerHTML = `<div class="loading"><span class="spinner"></span><span>Загрузка…</span></div>`;
+  }
+
+  async function api(path, options = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+      "X-Init-Data": tg ? tg.initData : "",
+      ...(options.headers || {})
+    };
+
+    const response = await fetch(`/api/${path}`, {
+      ...options,
+      headers
+    });
+
+    if (!response.ok) {
+      let message = `Ошибка ${response.status}`;
+      try {
+        const data = await response.json();
+        message = data.detail || message;
+      } catch (_) {}
+      throw new Error(message);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    return contentType.includes("application/json") ? response.json() : null;
+  }
+
+  function shiftDate(dateString, amount) {
+    const date = new Date(`${dateString}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + amount);
+    return date.toISOString().slice(0, 10);
+  }
+
+  function longDate(dateString) {
+    return new Date(`${dateString}T00:00:00Z`).toLocaleDateString("ru-RU", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: "UTC"
+    });
+  }
+
+  function shortDate(dateString) {
+    return new Date(`${dateString}T00:00:00Z`).toLocaleDateString("ru-RU", {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC"
+    });
+  }
+
+  function getTelegramUser() {
+    const user = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+    if (!user) {
+      return {
+        name: "Мой профиль",
+        username: "",
+        photoUrl: "",
+        initials: "Я"
+      };
+    }
+
+    const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || "Пользователь";
+    const initials = [user.first_name, user.last_name]
+      .filter(Boolean)
+      .map(part => part.trim().slice(0, 1))
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "П";
+
+    return {
+      name: fullName,
+      username: user.username ? `@${user.username}` : "Telegram-пользователь",
+      photoUrl: user.photo_url || "",
+      initials
+    };
+  }
+
+  function getGoalsKey() {
+    const user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    return `planner_goals_${user && user.id ? user.id : "local"}`;
+  }
+
+  function getGoals() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(getGoalsKey()) || "[]");
+      return Array.isArray(parsed)
+        ? parsed.filter(goal => goal && typeof goal.text === "string")
+        : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveGoals(goals) {
+    localStorage.setItem(getGoalsKey(), JSON.stringify(goals));
+  }
+
+  function taskRow(task, options = {}) {
+    const done = Boolean(task.done);
+    const time = task.at ? `<div class="task-time">${escapeHTML(task.at)}</div>` : "";
+    const date = options.showDate && task.day
+      ? `<span class="task-date">${escapeHTML(shortDate(task.day))}</span>`
+      : "";
+
+    return `
+      <div class="task ${done ? "done" : ""}">
+        <input class="task-checkbox" type="checkbox" ${done ? "checked" : ""}
+          aria-label="Отметить выполнение"
+          onchange="window.Planner.toggleTask(${Number(task.id)}, this.checked)">
+        <div class="task-main">
+          ${time}
+          <div class="task-title">${escapeHTML(task.title)}</div>
+        </div>
+        ${date}
+        <button class="delete-btn" type="button"
+          onclick="window.Planner.deleteTask(${Number(task.id)})"
+          aria-label="Удалить задачу">${icon("trash")}</button>
+      </div>
+    `;
+  }
+
+  async function renderDay() {
+    const data = await api(`day${currentDate ? `?d=${encodeURIComponent(currentDate)}` : ""}`);
+    latestDayData = data;
+    currentDate = data.date;
+    todayDate = data.today;
+
+    const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+    const lessons = Array.isArray(data.lessons) ? data.lessons : [];
+    const overdue = Array.isArray(data.overdue) ? data.overdue : [];
+    const completed = tasks.filter(task => Boolean(task.done)).length;
+    const total = tasks.length;
+    const percent = total ? Math.round((completed / total) * 100) : 0;
+    const greetingUser = getTelegramUser();
+    const dateLabel = longDate(currentDate);
+
+    app.innerHTML = `
+      <section class="hero">
+        <div class="kicker">Мой день</div>
+        <div class="hero-title">Привет, ${escapeHTML(greetingUser.name.split(" ")[0] || "друг")}!</div>
+        <p class="hero-text">Планируй спокойно и двигайся в своём темпе.</p>
+      </section>
+
+      <section class="date-nav">
+        <button class="icon-btn" type="button" onclick="window.Planner.moveDate(-1)" aria-label="Предыдущий день">‹</button>
+        <div class="date-name">${escapeHTML(dateLabel)}</div>
+        <button class="icon-btn" type="button" onclick="window.Planner.moveDate(1)" aria-label="Следующий день">›</button>
+      </section>
+
+      ${currentDate !== todayDate ? `
+        <button class="today-link" type="button" onclick="window.Planner.goToday()">Вернуться к сегодняшнему дню</button>
+      ` : ""}
+
+      <section class="card progress-card">
+        <div class="progress-line">
+          <div>
+            <div class="progress-label">Прогресс дня</div>
+            <div class="progress-number">${completed}<span> / ${total} задач</span></div>
+          </div>
+          <div class="progress-percent">${percent}%</div>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div>
+      </section>
+
+      <section class="stats">
+        <div class="stat">
+          <div class="stat-value">${completed}</div>
+          <div class="stat-label">Выполнено</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${total}</div>
+          <div class="stat-label">Всего дел</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${overdue.length}</div>
+          <div class="stat-label">Незавершённых</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title-row">
+          <h2 class="card-title">Уроки сегодня</h2>
+          <span class="card-caption">${lessons.length ? `${lessons.length} в плане` : ""}</span>
+        </div>
+        ${lessons.length ? lessons.map((lesson, index) => `
+          <div class="lesson">
+            <div class="lesson-index">${index + 1}</div>
+            <div class="lesson-text">${escapeHTML(lesson)}</div>
+          </div>
+        `).join("") : `<div class="empty">На этот день уроков нет. Их можно добавить во вкладке «Уроки».</div>`}
+      </section>
+
+      ${overdue.length ? `
+        <section class="card overdue">
+          <div class="card-title-row">
+            <h2 class="card-title">Незавершённые дела</h2>
+            <span class="card-caption">${overdue.length}</span>
+          </div>
+          ${overdue.map(task => taskRow(task, { showDate: true })).join("")}
+        </section>
+      ` : ""}
+
+      <section class="card">
+        <div class="card-title-row">
+          <h2 class="card-title">Дела на день</h2>
+          <span class="card-caption">${total ? `${completed} выполнено` : ""}</span>
+        </div>
+        ${tasks.length ? tasks.map(task => taskRow(task)).join("") : `<div class="empty">День пока свободен. Добавьте первое дело ниже.</div>`}
+      </section>
+
+      <section class="card add-card">
+        <div class="card-title-row">
+          <h2 class="card-title">Новое дело</h2>
+        </div>
+        <div class="add-grid">
+          <input id="new-task-title" type="text" maxlength="200" placeholder="Например, сделать домашнее задание" autocomplete="off">
+          <input id="new-task-time" type="time" aria-label="Время задачи">
+        </div>
+        <button id="add-task-button" class="primary-btn add-submit" type="button" onclick="window.Planner.addTask()">Добавить дело</button>
+      </section>
+    `;
+
+    const input = document.getElementById("new-task-title");
+    if (input) {
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          window.Planner.addTask();
+        }
+      });
+    }
+  }
+
+  async function renderSchedule() {
+    const schedule = await api("schedule");
+    lastSchedule = schedule;
+    const days = Array.isArray(schedule.days) ? schedule.days : Array(7).fill("");
+
+    app.innerHTML = `
+      <section class="hero">
+        <div class="kicker">Недельный план</div>
+        <div class="hero-title">Расписание уроков</div>
+        <p class="hero-text">Каждый урок с новой строки. Время можно указать в начале: «08:30 Математика».</p>
+      </section>
+
+      <section class="card">
+        ${DAYS.map((day, index) => `
+          <div class="schedule-day">
+            <div class="schedule-day-name">${day}</div>
+            <textarea id="schedule-${index}" placeholder="Уроков нет">${escapeHTML(days[index] || "")}</textarea>
+          </div>
+        `).join("")}
+        <button id="save-schedule-button" class="primary-btn" type="button" onclick="window.Planner.saveSchedule()">Сохранить расписание</button>
+      </section>
+    `;
+  }
+
+  async function loadAllTasksStats() {
+    const settings = await api("settings");
+    const timeZone = settings.tz || "Europe/Moscow";
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    const parts = formatter.formatToParts(new Date());
+    const map = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    const localToday = `${map.year}-${map.month}-${map.day}`;
+
+    const dates = [];
+    for (let offset = 0; offset < 30; offset += 1) {
+      dates.push(shiftDate(localToday, -offset));
+    }
+
+    const results = await Promise.all(dates.map(async day => {
+      try {
+        return await api(`day?d=${encodeURIComponent(day)}`);
+      } catch (_) {
+        return { tasks: [] };
+      }
+    }));
+
+    const allTasks = results.flatMap(item => Array.isArray(item.tasks) ? item.tasks : []);
+    const completed = allTasks.filter(task => Boolean(task.done)).length;
+    const total = allTasks.length;
+    return {
+      completed,
+      total,
+      percent: total ? Math.round((completed / total) * 100) : 0
+    };
+  }
+
+  async function renderProfile() {
+    const user = getTelegramUser();
+    const goals = getGoals();
+    const doneGoals = goals.filter(goal => Boolean(goal.done)).length;
+
+    let stats = { completed: 0, total: 0, percent: 0 };
+    try {
+      stats = await loadAllTasksStats();
+    } catch (_) {
+      if (latestDayData) {
+        const tasks = latestDayData.tasks || [];
+        const completed = tasks.filter(task => Boolean(task.done)).length;
+        stats = {
+          completed,
+          total: tasks.length,
+          percent: tasks.length ? Math.round((completed / tasks.length) * 100) : 0
+        };
+      }
+    }
+
+    const avatar = user.photoUrl
+      ? `<img src="${escapeAttr(user.photoUrl)}" alt="Аватар">`
+      : escapeHTML(user.initials);
+
+    app.innerHTML = `
+      <section class="hero">
+        <div class="kicker">Профиль</div>
+        <div class="hero-title">Твой прогресс</div>
+        <p class="hero-text">Статистика задач за последние 30 дней.</p>
+      </section>
+
+      <section class="card">
+        <div class="profile-head">
+          <div class="avatar">${avatar}</div>
+          <div>
+            <div class="profile-name">${escapeHTML(user.name)}</div>
+            <div class="profile-user">${escapeHTML(user.username)}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div class="stat">
+          <div class="stat-value">${stats.completed}</div>
+          <div class="stat-label">Выполнено задач</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${doneGoals}</div>
+          <div class="stat-label">Выполнено целей</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${stats.percent}%</div>
+          <div class="stat-label">Прогресс задач</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title-row">
+          <h2 class="card-title">Достижения</h2>
+        </div>
+        <div class="achievement">
+          <div class="achievement-icon">${icon("check")}</div>
+          <div>
+            <div class="achievement-title">Выполненные задачи</div>
+            <div class="achievement-text">${stats.completed} за последние 30 дней</div>
+          </div>
+        </div>
+        <div class="achievement">
+          <div class="achievement-icon">${icon("chart")}</div>
+          <div>
+            <div class="achievement-title">Текущий прогресс</div>
+            <div class="achievement-text">${stats.percent}% выполненных задач за период</div>
+          </div>
+        </div>
+        <div class="achievement">
+          <div class="achievement-icon">${icon("target")}</div>
+          <div>
+            <div class="achievement-title">Личные цели</div>
+            <div class="achievement-text">${doneGoals} из ${goals.length} отмечены выполненными</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title-row">
+          <h2 class="card-title">Личные цели</h2>
+          <span class="card-caption">${doneGoals}/${goals.length}</span>
+        </div>
+        <p class="local-note">Цели хранятся только на этом устройстве и не синхронизируются между устройствами.</p>
+        ${goals.length ? goals.map(goal => `
+          <div class="goal ${goal.done ? "done" : ""}">
+            <input class="task-checkbox" type="checkbox" ${goal.done ? "checked" : ""}
+              aria-label="Отметить цель"
+              onchange="window.Planner.toggleGoal('${escapeAttr(goal.id)}', this.checked)">
+            <div class="goal-text">${escapeHTML(goal.text)}</div>
+            <button class="delete-btn" type="button"
+              onclick="window.Planner.deleteGoal('${escapeAttr(goal.id)}')"
+              aria-label="Удалить цель">${icon("trash")}</button>
+          </div>
+        `).join("") : `<div class="empty">Добавьте цель, которую хотите достичь.</div>`}
+        <div class="add-grid" style="margin-top:12px">
+          <input id="new-goal-text" type="text" maxlength="200" placeholder="Новая личная цель" autocomplete="off">
+          <button class="secondary-btn" type="button" onclick="window.Planner.addGoal()">Добавить</button>
+        </div>
+      </section>
+    `;
+
+    const goalInput = document.getElementById("new-goal-text");
+    if (goalInput) {
+      goalInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          window.Planner.addGoal();
+        }
+      });
+    }
+  }
+
+  async function renderSettings() {
+    const settings = await api("settings");
+
+    app.innerHTML = `
+      <section class="hero">
+        <div class="kicker">Настройки</div>
+        <div class="hero-title">Напоминания</div>
+        <p class="hero-text">Настройте время расписания и повторных уведомлений.</p>
+      </section>
+
+      <section class="card">
+        <p class="settings-note">Часовой пояс должен быть в формате IANA, например: <b>Europe/Moscow</b>.</p>
+
+        <label class="field-label" for="setting-tz">Часовой пояс</label>
+        <input id="setting-tz" type="text" value="${escapeAttr(settings.tz || "")}" placeholder="Europe/Moscow">
+
+        <label class="field-label" for="setting-morning">Отправка расписания</label>
+        <input id="setting-morning" type="time" value="${escapeAttr(settings.morning || "")}">
+
+        <label class="field-label" for="setting-first">Первое напоминание</label>
+        <input id="setting-first" type="time" value="${escapeAttr(settings.first || "")}">
+
+        <label class="field-label" for="setting-every">Интервал повторных напоминаний, часы</label>
+        <input id="setting-every" type="number" min="1" step="1" value="${escapeAttr(settings.every ?? 2)}">
+
+        <label class="field-label" for="setting-last">Последнее напоминание</label>
+        <input id="setting-last" type="time" value="${escapeAttr(settings.last || "")}">
+
+        <button id="save-settings-button" class="primary-btn" style="width:100%; margin-top:18px" type="button" onclick="window.Planner.saveSettings()">Сохранить настройки</button>
+      </section>
+    `;
+  }
+
+  async function render() {
+    const token = ++renderToken;
+    setLoading();
+
+    try {
+      if (view === "day") await renderDay();
+      if (view === "schedule") await renderSchedule();
+      if (view === "profile") await renderProfile();
+      if (view === "settings") await renderSettings();
+
+      if (token !== renderToken) return;
+    } catch (error) {
+      if (token !== renderToken) return;
+      app.innerHTML = `
+        <section class="card">
+          <h2 class="card-title">Не удалось загрузить данные</h2>
+          <p class="hero-text">${escapeHTML(error.message || "Проверьте подключение и откройте приложение через Telegram.")}</p>
+          <button class="primary-btn" type="button" onclick="window.Planner.reload()">Повторить</button>
+        </section>
+      `;
+    }
+  }
+
+  function changeView(nextView) {
+    view = nextView;
+    document.querySelectorAll("[data-view]").forEach(button => {
+      button.classList.toggle("active", button.dataset.view === nextView);
+    });
+    render();
+  }
+
+  async function addTask() {
+    const titleInput = document.getElementById("new-task-title");
+    const timeInput = document.getElementById("new-task-time");
+    const button = document.getElementById("add-task-button");
+    if (!titleInput || !timeInput) return;
+
+    const title = titleInput.value.trim();
+    if (!title) {
+      showToast("Введите название дела", true);
+      titleInput.focus();
+      return;
+    }
+
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Добавление…";
+
+    try {
+      await api("tasks", {
+        method: "POST",
+        body: JSON.stringify({
+          day: currentDate,
+          title,
+          at: timeInput.value
+        })
+      });
+      showToast("Дело добавлено");
+      await renderDay();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = originalText;
+      showToast(error.message || "Не удалось добавить дело", true);
+    }
+  }
+
+  async function toggleTask(id, done) {
+    try {
+      await api(`tasks/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ done: Boolean(done) })
+      });
+      await renderDay();
+    } catch (error) {
+      showToast(error.message || "Не удалось обновить задачу", true);
+      await renderDay();
+    }
+  }
+
+  async function deleteTask(id) {
+    try {
+      await api(`tasks/${id}`, { method: "DELETE" });
+      showToast("Задача удалена");
+      await renderDay();
+    } catch (error) {
+      showToast(error.message || "Не удалось удалить задачу", true);
+    }
+  }
+
+  function moveDate(step) {
+    currentDate = shiftDate(currentDate || todayDate, step);
+    render();
+  }
+
+  function goToday() {
+    currentDate = null;
+    render();
+  }
+
+  async function saveSchedule() {
+    const button = document.getElementById("save-schedule-button");
+    const days = DAYS.map((_, index) => {
+      const textarea = document.getElementById(`schedule-${index}`);
+      return textarea ? textarea.value : "";
+    });
+
+    if (!button) return;
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Сохранение…";
+
+    try {
+      await api("schedule", {
+        method: "PUT",
+        body: JSON.stringify({ days })
+      });
+      lastSchedule = { days };
+      button.disabled = false;
+      button.textContent = originalText;
+      showToast("Расписание сохранено");
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = originalText;
+      showToast(error.message || "Не удалось сохранить расписание", true);
+    }
+  }
+
+  async function saveSettings() {
+    const button = document.getElementById("save-settings-button");
+    const tz = document.getElementById("setting-tz");
+    const morning = document.getElementById("setting-morning");
+    const first = document.getElementById("setting-first");
+    const every = document.getElementById("setting-every");
+    const last = document.getElementById("setting-last");
+
+    if (!button || !tz || !morning || !first || !every || !last) return;
+
+    const payload = {
+      tz: tz.value.trim(),
+      morning: morning.value,
+      first: first.value,
+      every: Number(every.value),
+      last: last.value
+    };
+
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Сохранение…";
+
+    try {
+      await api("settings", {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      });
+      button.disabled = false;
+      button.textContent = originalText;
+      showToast("Настройки сохранены");
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = originalText;
+      showToast(error.message || "Не удалось сохранить настройки", true);
+    }
+  }
+
+  function addGoal() {
+    const input = document.getElementById("new-goal-text");
+    if (!input) return;
+
+    const text = input.value.trim();
+    if (!text) {
+      showToast("Введите текст цели", true);
+      input.focus();
+      return;
+    }
+
+    const goals = getGoals();
+    goals.unshift({
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      text,
+      done: false
+    });
+
+    saveGoals(goals);
+    showToast("Цель добавлена");
+    renderProfile();
+  }
+
+  function toggleGoal(id, done) {
+    const goals = getGoals().map(goal => goal.id === id ? { ...goal, done: Boolean(done) } : goal);
+    saveGoals(goals);
+    renderProfile();
+  }
+
+  function deleteGoal(id) {
+    const goals = getGoals().filter(goal => goal.id !== id);
+    saveGoals(goals);
+    showToast("Цель удалена");
+    renderProfile();
+  }
+
+  window.Planner = {
+    addTask,
+    toggleTask,
+    deleteTask,
+    moveDate,
+    goToday,
+    saveSchedule,
+    saveSettings,
+    addGoal,
+    toggleGoal,
+    deleteGoal,
+    reload: render
+  };
+
+  document.querySelectorAll("[data-view]").forEach(button => {
+    button.addEventListener("click", () => changeView(button.dataset.view));
+  });
+
+  initTelegram();
+  render();
+})();
+</script>
+</body>
+</html>
